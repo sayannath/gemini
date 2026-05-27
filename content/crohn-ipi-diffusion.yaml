@@ -9,7 +9,7 @@ poster:
     - id: "ucalgary-cs"
       name: "Department of Computer Science, University of Calgary"
       location: "Calgary, Canada"
-  event: "A-EMEDICO Annual Meeting 2026"
+  event: "A-EMEDICO, Annual Meeting 2026"
   footer:
     left: "Department of Computer Science, University of Calgary"
     center: "A-EMEDICO Annual Meeting 2026"
@@ -20,8 +20,8 @@ poster:
         title: "Motivation, Dataset, Research Question"
         sections:
           - "motivation"
-          - "research-question"
           - "dataset"
+          - "research-question"
       - id: "middle"
         title: "Method and Experiment Design"
         sections:
@@ -49,12 +49,14 @@ sections:
   - id: "motivation"
     title: "Motivation"
     body: |
-      Clinical endoscopy datasets are often highly imbalanced, where majority classes dominate the training data. This imbalance makes it difficult for classification models to learn rare Crohn's disease findings such as ulceration, edema, and stenosis.
+      Clinical endoscopy datasets are often highly imbalanced, where majority classes dominate the training data. This imbalance makes it difficult for classification models to learn rare Crohn's disease [1] findings such as ulceration, edema, and stenosis.
 
       Our work investigates whether diffusion-generated synthetic images can help improve classification performance under severe class imbalance.
     figures:
       - id: "dataset-fold-distribution"
-        path: ""
+        path: "content/assets/crohn-ipi-diffusion/fig1-dataset-overview.pdf"
+        width: 1.18
+        height_cm: 12.8
         caption: "Figure 1. CrohnIPI dataset distribution across five folds. The normal class dominates the dataset, creating a strong class-imbalance problem."
 
   - id: "research-question"
@@ -65,24 +67,56 @@ sections:
     title: "Dataset"
     dataset_name: "CrohnIPI endoscopy image dataset"
     classes:
-      - "N"
-      - "E"
-      - "O"
-      - "AU"
-      - "S"
-      - "U3-10"
-      - "U>10"
+      - code: "N"
+        name: "Normal"
+      - code: "E"
+        name: "Erythema"
+      - code: "O"
+        name: "Edema"
+      - code: "AU"
+        name: "Aphthoid Ulceration"
+      - code: "S"
+        name: "Stenosis"
+      - code: "U3-10"
+        name: "Ulceration between 3 mm and 10 mm"
+      - code: "U>10 / U_gt_10"
+        name: "Ulceration greater than 10 mm"
     evaluation_setup: "5-fold cross-validation"
     main_challenge: "Severe class imbalance, where the majority class dominates and rare pathological classes have fewer examples."
+    figures:
+      layout: "class_grid"
+      columns: 4
+      image_height_cm: 7.6
+      item_width: 0.242
+      gap_width: 0.006
+      caption: "Figure 2. Representative CrohnIPI endoscopy examples from the seven dataset classes."
+      items:
+        - label: "N"
+          path: "content/assets/crohn-ipi-diffusion/individual-images/N.jpg"
+        - label: "E"
+          path: "content/assets/crohn-ipi-diffusion/individual-images/E.jpg"
+        - label: "O"
+          path: "content/assets/crohn-ipi-diffusion/individual-images/O.jpg"
+        - label: "AU"
+          path: "content/assets/crohn-ipi-diffusion/individual-images/AU.jpg"
+        - label: "S"
+          path: "content/assets/crohn-ipi-diffusion/individual-images/S.jpg"
+        - label: "U3-10"
+          path: "content/assets/crohn-ipi-diffusion/individual-images/U3_10.jpg"
+        - label: "U>10"
+          path: "content/assets/crohn-ipi-diffusion/individual-images/U_gt_10.jpg"
 
   - id: "proposed-method"
     title: "Proposed Method"
     body: |
-      We train per-class LoRA diffusion adapters using real CrohnIPI images. Each adapter generates synthetic images for a specific clinical class. The generated images are then passed through multiple filtering steps before being used to train a ConvNeXt-Large classifier.
+      We train per-class LoRA diffusion [3] adapters using real CrohnIPI images. Each adapter generates synthetic images for a specific clinical class. The generated images are then passed through multiple filtering steps before being used to train a ConvNeXt-Large [2] classifier.
     figures:
       - id: "synthetic-augmentation-pipeline"
-        path: ""
-        caption: "Figure 2. Overview of the proposed synthetic augmentation pipeline using per-class LoRA diffusion adapters and filtered synthetic data for classifier training."
+        path: "content/assets/crohn-ipi-diffusion/fig3-proposed-solution.png"
+        width: 1.12
+        height_cm: 8.3
+        top_padding_cm: 0.4
+        caption: "Figure 3. Overview of the proposed synthetic augmentation pipeline using per-class LoRA diffusion adapters and filtered synthetic data for classifier training."
 
   - id: "synthetic-image-filtering"
     title: "Synthetic Image Filtering"
@@ -94,11 +128,11 @@ sections:
         - "Filtering Step"
         - "Purpose"
       rows:
-        - ["Artifact detection", "Remove blurry or broken-color images"]
-        - ["Class-consistency check", "Remove images predicted as the wrong class"]
-        - ["DINOv2 memorization check", "Detect synthetic images that are too similar to real images"]
-        - ["Diversity deduplication", "Remove highly similar synthetic samples"]
-        - ["Final filtered set", "Used for downstream classifier training"]
+        - ["1. Artifact detection", "Remove blurry or broken-color images"]
+        - ["2. Class-consistency check", "Remove images predicted as the wrong class"]
+        - ["3. DINOv2 memorization check", "Detect synthetic images that are too similar to real images"]
+        - ["4. Diversity deduplication", "Remove highly similar synthetic samples"]
+        - ["5. Final filtered set", "Used for downstream classifier training"]
     technical_details:
       display: "small"
       items:
@@ -122,7 +156,7 @@ sections:
         - ["Oversampling", "Repeated rare-class real images"]
         - ["Synthetic uncapped", "Full per-class LoRA synthetic dataset"]
         - ["Synthetic balanced/capped", "Equal synthetic cap per class"]
-        - ["Focal loss", "Synthetic data with focal loss"]
+        - ["Focal loss [4]", "Synthetic data with focal loss [4]"]
         - ["Inverse-frequency CE", "Synthetic data with class-weighted loss"]
 
   - id: "synthetic-dataset-design"
@@ -131,8 +165,10 @@ sections:
       Synthetic images were generated for each class using per-class LoRA adapters. We evaluate both uncapped synthetic datasets and balanced/capped synthetic datasets to study whether synthetic class balancing improves classification performance.
     figures:
       - id: "synthetic-images-per-class"
-        path: ""
-        caption: "Figure 3. Number of generated synthetic images per class across different synthetic dataset variants."
+        path: "content/assets/crohn-ipi-diffusion/fig4-synthetic_data_grouped.pdf"
+        width: 1.12
+        height_cm: 12.5
+        caption: "Figure 4. Number of generated synthetic images per class across different synthetic dataset variants."
 
   - id: "main-results"
     title: "Main Results"
@@ -151,6 +187,13 @@ sections:
         - ["Synthetic + Balanced", 0.8076, 0.8090, 0.9591]
         - ["Focal Uncapped", 0.8139, 0.8078, 0.9708]
         - ["Focal Balanced", 0.8077, 0.7969, 0.9721]
+      bold_cells:
+        - row: "Synthetic + Balanced"
+          column: "Balanced Accuracy"
+        - row: "Focal Uncapped"
+          column: "Macro F1"
+        - row: "Focal Balanced"
+          column: "Macro AUROC"
     key_result: "Synthetic augmentation improves Macro F1 over the real-only baseline. The best Macro F1 is achieved using the Focal Uncapped synthetic condition."
 
   - id: "per-class-recall-analysis"
@@ -158,9 +201,17 @@ sections:
     body: |
       Synthetic augmentation improves recall for several rare classes, but the gains are not uniform across all labels. This suggests that diffusion-based augmentation can help with class imbalance, but class-specific generation quality remains important.
     figures:
-      - id: "rare-class-recall"
-        path: ""
-        caption: "Figure 4. Rare-class recall across training conditions. Synthetic augmentation improves some rare-class recalls, but not all classes benefit equally."
+      layout: "side_by_side"
+      height_cm: 8.2
+      item_width: 0.535
+      gap_width: 0.012
+      items:
+        - id: "rare-class-recall"
+          path: "content/assets/crohn-ipi-diffusion/fig5a-rare_class_recall_progression.png"
+          caption: "Figure 5a. Rare-class recall across training conditions. Synthetic augmentation improves some rare-class recalls, but not all classes benefit equally."
+        - id: "recall-advantage"
+          path: "content/assets/crohn-ipi-diffusion/fig5b-recall_advantage_vs_real_only.png"
+          caption: "Figure 5b. Recall advantage compared with the real-only baseline."
 
   - id: "failure-analysis"
     title: "Failure Analysis"
@@ -168,18 +219,51 @@ sections:
       The current method still struggles with the E class. Failure analysis shows that some E samples are confused with other classes, including the majority class. This indicates that synthetic data alone is not enough; better class-specific generation and expert-guided filtering may be needed.
     figures:
       - id: "e-class-failure-analysis"
-        path: ""
-        caption: "Figure 5. Failure analysis showing that the E class remains difficult under the current synthetic augmentation method."
+        path: "content/assets/crohn-ipi-diffusion/fig6-_current_method_e_failure_profile.png"
+        width: 1.14
+        height_cm: 15.3
+        caption: "Figure 6. Failure analysis showing that the E class remains difficult under the current synthetic augmentation method."
 
   - id: "main-takeaways"
     title: "Main Takeaways"
     bullets:
-      - "Per-class LoRA diffusion can improve CrohnIPI classification under severe class imbalance."
-      - "Synthetic data performs better than simple oversampling."
-      - "The best Macro F1 is achieved using synthetic data with focal loss."
-      - "The E class remains challenging, showing the need for better class-specific generation and filtering."
-      - "Future work should include stronger quality control and expert validation of synthetic endoscopy images."
+      - "Per-class LoRA synthetic data improves class-imbalanced CrohnIPI classification."
+      - "Synthetic augmentation outperforms oversampling; Focal Uncapped gives the best Macro F1."
+      - "Balanced and focal settings improve complementary metrics."
+      - "The E class remains challenging, motivating stronger filtering and expert validation."
+    references:
+      - "Vallée et al., CrohnIPI, SPIE Medical Imaging, 2020."
+      - "Woo et al., ConvNeXt V2, CVPR, 2023."
+      - "Podell et al., SDXL, ICLR, 2024."
+      - "Mukhoti et al., Calibrating deep neural networks using focal loss, NeurIPS, 2020."
 
 references:
-  status: "to be provided"
-  entries: []
+  status: "provided"
+  entries:
+    - key: "vallee2020crohnipi"
+      purpose: "CrohnIPI dataset"
+      title: "CrohnIPI: An endoscopic image database for the evaluation of automatic Crohn's disease lesions recognition algorithms"
+      authors: "Vallée, Rémi; De Maissin, Astrid; Coutrot, Antoine; Mouchère, Harold; Bourreille, Arnaud; Normand, Nicolas"
+      venue: "Medical Imaging 2020: Biomedical Applications in Molecular, Structural, and Functional Imaging"
+      organization: "SPIE"
+      year: 2020
+    - key: "woo2023convnext"
+      purpose: "ConvNeXt model"
+      title: "ConvNeXt V2: Co-designing and scaling ConvNets with masked autoencoders"
+      authors: "Woo, Sanghyun; Debnath, Shoubhik; Hu, Ronghang; Chen, Xinlei; Liu, Zhuang; Kweon, In So; Xie, Saining"
+      venue: "Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition"
+      year: 2023
+    - key: "podell2024sdxl"
+      purpose: "Diffusion model"
+      title: "SDXL: Improving latent diffusion models for high-resolution image synthesis"
+      authors: "Podell, Dustin; English, Zion; Lacey, Kyle; Blattmann, Andreas; Dockhorn, Tim; Müller, Jonas; Penna, Joe; Rombach, Robin"
+      venue: "International Conference on Learning Representations"
+      year: 2024
+    - key: "mukhoti2020calibrating"
+      purpose: "Focal loss"
+      title: "Calibrating deep neural networks using focal loss"
+      authors: "Mukhoti, Jishnu; Kulharia, Viveka; Sanyal, Amartya; Golodetz, Stuart; Torr, Philip; Dokania, Puneet"
+      venue: "Advances in Neural Information Processing Systems"
+      volume: 33
+      pages: "15288--15299"
+      year: 2020

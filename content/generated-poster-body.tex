@@ -10,26 +10,15 @@
 
 \begin{block}{Motivation}
 
-Clinical endoscopy datasets are often highly imbalanced, where majority classes dominate the training data. This imbalance makes it difficult for classification models to learn rare Crohn's disease findings such as ulceration, edema, and stenosis.
+Clinical endoscopy datasets are often highly imbalanced, where majority classes dominate the training data. This imbalance makes it difficult for classification models to learn rare Crohn's disease [1] findings such as ulceration, edema, and stenosis.
 
 Our work investigates whether diffusion-generated synthetic images can help improve classification performance under severe class imbalance.
 
 \begin{center}
-\fbox{%
-\begin{minipage}[c][3.4cm][c]{0.9\linewidth}
-\centering\footnotesize Figure placeholder\\
-\scriptsize dataset-fold-distribution
-\end{minipage}%
-}
-\par\smallskip
-{\footnotesize\itshape Figure 1. CrohnIPI dataset distribution across five folds. The normal class dominates the dataset, creating a strong class-imbalance problem.\par}
+\includegraphics[width=1.18\linewidth,height=12.8cm,keepaspectratio]{content/assets/crohn-ipi-diffusion/fig1-dataset-overview.pdf}
+\par\vspace{0.35ex}
+{\scriptsize\itshape Figure 1. CrohnIPI dataset distribution across five folds. The normal class dominates the dataset, creating a strong class-imbalance problem.\par}
 \end{center}
-
-\end{block}
-
-\begin{block}{Research Question}
-
-\textbf{Key question:} To what extent can per-class diffusion-generated synthetic images improve the classification performance of CrohnIPI models under severe class imbalance?
 
 \end{block}
 
@@ -37,11 +26,87 @@ Our work investigates whether diffusion-generated synthetic images can help impr
 
 \textbf{Dataset:} CrohnIPI endoscopy image dataset
 
-\textbf{Classes:} N, E, O, AU, S, U3-10, U\textgreater{}10
+\textbf{Classes:}
+\begin{center}
+{\footnotesize
+\renewcommand{\arraystretch}{1.08}
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.24\linewidth}>{\raggedright\arraybackslash}p{0.66\linewidth}@{}}
+\toprule
+\textbf{Class} & \textbf{Full name} \\
+\midrule
+N & Normal \\
+E & Erythema \\
+O & Edema \\
+AU & Aphthoid Ulceration \\
+S & Stenosis \\
+U3-10 & Ulceration between 3 mm and 10 mm \\
+U\textgreater{}10 / U\_gt\_10 & Ulceration greater than 10 mm \\
+\bottomrule
+\end{tabular}
+}
+\end{center}
 
 \textbf{Evaluation setup:} 5-fold cross-validation
 
 \textbf{Main challenge:} Severe class imbalance, where the majority class dominates and rare pathological classes have fewer examples.
+
+\begin{center}
+{\setlength{\tabcolsep}{0pt}%
+\makebox[\linewidth][c]{%
+\begin{minipage}[t]{0.242\linewidth}
+\centering
+\includegraphics[width=\linewidth,height=7.6cm,keepaspectratio]{content/assets/crohn-ipi-diffusion/individual-images/N.jpg}
+\par\vspace{0.2ex}{\scriptsize\textbf{N}\par}
+\end{minipage}
+\hspace{0.006\linewidth}
+\begin{minipage}[t]{0.242\linewidth}
+\centering
+\includegraphics[width=\linewidth,height=7.6cm,keepaspectratio]{content/assets/crohn-ipi-diffusion/individual-images/E.jpg}
+\par\vspace{0.2ex}{\scriptsize\textbf{E}\par}
+\end{minipage}
+\hspace{0.006\linewidth}
+\begin{minipage}[t]{0.242\linewidth}
+\centering
+\includegraphics[width=\linewidth,height=7.6cm,keepaspectratio]{content/assets/crohn-ipi-diffusion/individual-images/O.jpg}
+\par\vspace{0.2ex}{\scriptsize\textbf{O}\par}
+\end{minipage}
+\hspace{0.006\linewidth}
+\begin{minipage}[t]{0.242\linewidth}
+\centering
+\includegraphics[width=\linewidth,height=7.6cm,keepaspectratio]{content/assets/crohn-ipi-diffusion/individual-images/AU.jpg}
+\par\vspace{0.2ex}{\scriptsize\textbf{AU}\par}
+\end{minipage}
+}%
+\par\vspace{0.55ex}
+\makebox[\linewidth][c]{%
+\begin{minipage}[t]{0.242\linewidth}
+\centering
+\includegraphics[width=\linewidth,height=7.6cm,keepaspectratio]{content/assets/crohn-ipi-diffusion/individual-images/S.jpg}
+\par\vspace{0.2ex}{\scriptsize\textbf{S}\par}
+\end{minipage}
+\hspace{0.006\linewidth}
+\begin{minipage}[t]{0.242\linewidth}
+\centering
+\includegraphics[width=\linewidth,height=7.6cm,keepaspectratio]{content/assets/crohn-ipi-diffusion/individual-images/U3_10.jpg}
+\par\vspace{0.2ex}{\scriptsize\textbf{U3-10}\par}
+\end{minipage}
+\hspace{0.006\linewidth}
+\begin{minipage}[t]{0.242\linewidth}
+\centering
+\includegraphics[width=\linewidth,height=7.6cm,keepaspectratio]{content/assets/crohn-ipi-diffusion/individual-images/U_gt_10.jpg}
+\par\vspace{0.2ex}{\scriptsize\textbf{U\textgreater{}10}\par}
+\end{minipage}
+}%
+\par\vspace{0.35ex}
+{\scriptsize\itshape Figure 2. Representative CrohnIPI endoscopy examples from the seven dataset classes.\par}
+}
+\end{center}
+
+\end{block}
+
+\begin{block}{Research Question}
+
+\textbf{Key question:} To what extent can per-class diffusion-generated synthetic images improve the classification performance of CrohnIPI models under severe class imbalance?
 
 \end{block}
 
@@ -53,17 +118,13 @@ Our work investigates whether diffusion-generated synthetic images can help impr
 
 \begin{block}{Proposed Method}
 
-We train per-class LoRA diffusion adapters using real CrohnIPI images. Each adapter generates synthetic images for a specific clinical class. The generated images are then passed through multiple filtering steps before being used to train a ConvNeXt-Large classifier.
+We train per-class LoRA diffusion [3] adapters using real CrohnIPI images. Each adapter generates synthetic images for a specific clinical class. The generated images are then passed through multiple filtering steps before being used to train a ConvNeXt-Large [2] classifier.
 
 \begin{center}
-\fbox{%
-\begin{minipage}[c][3.4cm][c]{0.9\linewidth}
-\centering\footnotesize Figure placeholder\\
-\scriptsize synthetic-augmentation-pipeline
-\end{minipage}%
-}
-\par\smallskip
-{\footnotesize\itshape Figure 2. Overview of the proposed synthetic augmentation pipeline using per-class LoRA diffusion adapters and filtered synthetic data for classifier training.\par}
+\vspace*{0.4cm}
+\includegraphics[width=1.12\linewidth,height=8.3cm,keepaspectratio]{content/assets/crohn-ipi-diffusion/fig3-proposed-solution.png}
+\par\vspace{0.35ex}
+{\scriptsize\itshape Figure 3. Overview of the proposed synthetic augmentation pipeline using per-class LoRA diffusion adapters and filtered synthetic data for classifier training.\par}
 \end{center}
 
 \end{block}
@@ -79,11 +140,11 @@ To reduce low-quality or unsafe synthetic samples, we apply several filtering st
 \toprule
 \textbf{Filtering Step} & \textbf{Purpose} \\
 \midrule
-Artifact detection & Remove blurry or broken-color images \\
-Class-consistency check & Remove images predicted as the wrong class \\
-DINOv2 memorization check & Detect synthetic images that are too similar to real images \\
-Diversity deduplication & Remove highly similar synthetic samples \\
-Final filtered set & Used for downstream classifier training \\
+1. Artifact detection & Remove blurry or broken-color images \\
+2. Class-consistency check & Remove images predicted as the wrong class \\
+3. DINOv2 memorization check & Detect synthetic images that are too similar to real images \\
+4. Diversity deduplication & Remove highly similar synthetic samples \\
+5. Final filtered set & Used for downstream classifier training \\
 \bottomrule
 \end{tabular}
 }
@@ -119,7 +180,7 @@ Real + Augmented & Standard clinical image augmentation \\
 Oversampling & Repeated rare-class real images \\
 Synthetic uncapped & Full per-class LoRA synthetic dataset \\
 Synthetic balanced/capped & Equal synthetic cap per class \\
-Focal loss & Synthetic data with focal loss \\
+Focal loss [4] & Synthetic data with focal loss [4] \\
 Inverse-frequency CE & Synthetic data with class-weighted loss \\
 \bottomrule
 \end{tabular}
@@ -135,14 +196,9 @@ Inverse-frequency CE & Synthetic data with class-weighted loss \\
 Synthetic images were generated for each class using per-class LoRA adapters. We evaluate both uncapped synthetic datasets and balanced/capped synthetic datasets to study whether synthetic class balancing improves classification performance.
 
 \begin{center}
-\fbox{%
-\begin{minipage}[c][3.4cm][c]{0.9\linewidth}
-\centering\footnotesize Figure placeholder\\
-\scriptsize synthetic-images-per-class
-\end{minipage}%
-}
-\par\smallskip
-{\footnotesize\itshape Figure 3. Number of generated synthetic images per class across different synthetic dataset variants.\par}
+\includegraphics[width=1.12\linewidth,height=12.5cm,keepaspectratio]{content/assets/crohn-ipi-diffusion/fig4-synthetic_data_grouped.pdf}
+\par\vspace{0.35ex}
+{\scriptsize\itshape Figure 4. Number of generated synthetic images per class across different synthetic dataset variants.\par}
 \end{center}
 
 \end{block}
@@ -166,9 +222,9 @@ Real only & 0.7888 & 0.7781 & 0.9709 \\
 Real + Augmented & 0.7973 & 0.7902 & 0.9727 \\
 Oversampling & 0.7786 & 0.7596 & 0.9628 \\
 Synthetic & 0.8085 & 0.7949 & 0.9708 \\
-Synthetic + Balanced & 0.8076 & 0.8090 & 0.9591 \\
-Focal Uncapped & 0.8139 & 0.8078 & 0.9708 \\
-Focal Balanced & 0.8077 & 0.7969 & 0.9721 \\
+Synthetic + Balanced & 0.8076 & \textbf{0.8090} & 0.9591 \\
+Focal Uncapped & \textbf{0.8139} & 0.8078 & 0.9708 \\
+Focal Balanced & 0.8077 & 0.7969 & \textbf{0.9721} \\
 \bottomrule
 \end{tabularx}
 }
@@ -184,16 +240,24 @@ Focal Balanced & 0.8077 & 0.7969 & 0.9721 \\
 
 Synthetic augmentation improves recall for several rare classes, but the gains are not uniform across all labels. This suggests that diffusion-based augmentation can help with class imbalance, but class-specific generation quality remains important.
 
+{\hfuzz=30pt
 \begin{center}
-\fbox{%
-\begin{minipage}[c][3.4cm][c]{0.9\linewidth}
-\centering\footnotesize Figure placeholder\\
-\scriptsize rare-class-recall
-\end{minipage}%
-}
-\par\smallskip
-{\footnotesize\itshape Figure 4. Rare-class recall across training conditions. Synthetic augmentation improves some rare-class recalls, but not all classes benefit equally.\par}
+\makebox[\linewidth][c]{%
+\begin{minipage}[t]{0.535\linewidth}
+\centering
+\includegraphics[width=1.0\linewidth,height=8.2cm,keepaspectratio]{content/assets/crohn-ipi-diffusion/fig5a-rare_class_recall_progression.png}
+\par\vspace{0.25ex}
+{\scriptsize\itshape Figure 5a. Rare-class recall across training conditions. Synthetic augmentation improves some rare-class recalls, but not all classes benefit equally.\par}
+\end{minipage}\hspace{0.012\linewidth}
+\begin{minipage}[t]{0.535\linewidth}
+\centering
+\includegraphics[width=1.0\linewidth,height=8.2cm,keepaspectratio]{content/assets/crohn-ipi-diffusion/fig5b-recall_advantage_vs_real_only.png}
+\par\vspace{0.25ex}
+{\scriptsize\itshape Figure 5b. Recall advantage compared with the real-only baseline.\par}
+\end{minipage}
+}%
 \end{center}
+}
 
 \end{block}
 
@@ -202,14 +266,9 @@ Synthetic augmentation improves recall for several rare classes, but the gains a
 The current method still struggles with the E class. Failure analysis shows that some E samples are confused with other classes, including the majority class. This indicates that synthetic data alone is not enough; better class-specific generation and expert-guided filtering may be needed.
 
 \begin{center}
-\fbox{%
-\begin{minipage}[c][3.4cm][c]{0.9\linewidth}
-\centering\footnotesize Figure placeholder\\
-\scriptsize e-class-failure-analysis
-\end{minipage}%
-}
-\par\smallskip
-{\footnotesize\itshape Figure 5. Failure analysis showing that the E class remains difficult under the current synthetic augmentation method.\par}
+\includegraphics[width=1.14\linewidth,height=15.3cm,keepaspectratio]{content/assets/crohn-ipi-diffusion/fig6-_current_method_e_failure_profile.png}
+\par\vspace{0.35ex}
+{\scriptsize\itshape Figure 6. Failure analysis showing that the E class remains difficult under the current synthetic augmentation method.\par}
 \end{center}
 
 \end{block}
@@ -217,12 +276,19 @@ The current method still struggles with the E class. Failure analysis shows that
 \begin{block}{Main Takeaways}
 
 \begin{itemize}
-  \item Per-class LoRA diffusion can improve CrohnIPI classification under severe class imbalance.
-  \item Synthetic data performs better than simple oversampling.
-  \item The best Macro F1 is achieved using synthetic data with focal loss.
-  \item The E class remains challenging, showing the need for better class-specific generation and filtering.
-  \item Future work should include stronger quality control and expert validation of synthetic endoscopy images.
+  \item Per-class LoRA synthetic data improves class-imbalanced CrohnIPI classification.
+  \item Synthetic augmentation outperforms oversampling; Focal Uncapped gives the best Macro F1.
+  \item Balanced and focal settings improve complementary metrics.
+  \item The E class remains challenging, motivating stronger filtering and expert validation.
 \end{itemize}
+
+\vspace{0.35ex}{\scriptsize\textbf{References}\par}
+{\tiny
+\textbf{[1]} Vallée et al., CrohnIPI, SPIE Medical Imaging, 2020.\par
+\textbf{[2]} Woo et al., ConvNeXt V2, CVPR, 2023.\par
+\textbf{[3]} Podell et al., SDXL, ICLR, 2024.\par
+\textbf{[4]} Mukhoti et al., Calibrating deep neural networks using focal loss, NeurIPS, 2020.\par
+}
 
 \end{block}
 

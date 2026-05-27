@@ -75,8 +75,33 @@ def render_itemize(items)
   lines.join("\n")
 end
 
-def table_cell(value)
-  value.is_a?(Numeric) ? format("%.4f", value) : latex_escape(value)
+def table_cell(value, bold = false)
+  formatted = value.is_a?(Numeric) ? format("%.4f", value) : latex_escape(value)
+  bold ? "\\textbf{#{formatted}}" : formatted
+end
+
+def bold_table_cell?(table, row, column, row_index, column_index)
+  Array(table["bold_cells"]).any? do |cell|
+    row_matches =
+      if cell.key?("row")
+        row.first.to_s == cell["row"].to_s
+      elsif cell.key?("row_index")
+        row_index == cell["row_index"].to_i
+      else
+        false
+      end
+
+    column_matches =
+      if cell.key?("column")
+        column.to_s == cell["column"].to_s
+      elsif cell.key?("column_index")
+        column_index == cell["column_index"].to_i
+      else
+        false
+      end
+
+    row_matches && column_matches
+  end
 end
 
 def render_table(table)
@@ -110,8 +135,11 @@ def render_table(table)
     columns.map { |column| "\\textbf{#{latex_escape(column)}}" }.join(" & ") + " \\\\",
     "\\midrule"
   ]
-  rows.each do |row|
-    lines << row.map { |cell| table_cell(cell) }.join(" & ") + " \\\\"
+  rows.each_with_index do |row, row_index|
+    cells = row.each_with_index.map do |cell, column_index|
+      table_cell(cell, bold_table_cell?(table, row, columns[column_index], row_index, column_index))
+    end
+    lines << cells.join(" & ") + " \\\\"
   end
   lines += [
     "\\bottomrule",
@@ -124,40 +152,198 @@ def render_table(table)
   lines.join("\n")
 end
 
-def render_figures(figures)
-  return "" if figures.nil? || figures.empty?
+def figure_items(figures)
+  case figures
+  when Hash
+    figures.fetch("items", [])
+  else
+    figures
+  end
+end
 
-  figures.map do |figure|
-    path = figure["path"].to_s
-    image =
-      if !path.empty? && File.exist?(path)
-        "\\includegraphics[width=0.95\\linewidth]{#{latex_path(path)}}"
-      else
-        [
-          "\\fbox{%",
-          "\\begin{minipage}[c][3.4cm][c]{0.9\\linewidth}",
-          "\\centering\\footnotesize Figure placeholder\\\\",
-          "\\scriptsize #{latex_escape(figure.fetch("id"))}",
-          "\\end{minipage}%",
-          "}"
-        ].join("\n")
-      end
+def figure_layout(figures)
+  figures.is_a?(Hash) ? figures["layout"] : nil
+end
 
+def figure_default_height(figures)
+  figures.is_a?(Hash) ? figures["height_cm"] : nil
+end
+
+def figure_shared_caption(figures)
+  figures.is_a?(Hash) ? figures["caption"] : nil
+end
+
+def render_figure_image(figure, default_height_cm = nil, width_scale = nil)
+  path = figure["path"].to_s
+  width = width_scale || figure.fetch("width", 0.98)
+  height = figure.fetch("height_cm", default_height_cm || 8.0)
+
+  if !path.empty? && File.exist?(path)
+    "\\includegraphics[width=#{width}\\linewidth,height=#{height}cm,keepaspectratio]{#{latex_path(path)}}"
+  else
     [
-      "\\begin{center}",
-      image,
-      "\\par\\smallskip",
-      "{\\footnotesize\\itshape #{latex_escape(figure["caption"])}\\par}",
-      "\\end{center}"
+      "\\fbox{%",
+      "\\begin{minipage}[c][3.4cm][c]{0.9\\linewidth}",
+      "\\centering\\footnotesize Figure placeholder\\\\",
+      "\\scriptsize #{latex_escape(figure.fetch("id"))}",
+      "\\end{minipage}%",
+      "}"
     ].join("\n")
-  end.join("\n\n")
+  end
+end
+
+def render_single_figure(figure, default_height_cm = nil)
+  top_padding = figure["top_padding_cm"]
+  lines = ["\\begin{center}"]
+  lines << "\\vspace*{#{top_padding}cm}" if top_padding
+  lines += [
+    render_figure_image(figure, default_height_cm),
+    "\\par\\vspace{0.35ex}",
+    "{\\scriptsize\\itshape #{latex_escape(figure["caption"])}\\par}",
+    "\\end{center}"
+  ]
+  lines.join("\n")
+end
+
+def render_side_by_side_figures(figures, default_height_cm = nil)
+  items = figure_items(figures)
+  return "" if items.empty?
+
+  item_width = figures.is_a?(Hash) ? figures.fetch("item_width", 0.485) : 0.485
+  gap_width = figures.is_a?(Hash) ? figures.fetch("gap_width", 0.03) : 0.03
+  cells = items.map do |figure|
+    [
+      "\\begin{minipage}[t]{#{item_width}\\linewidth}",
+      "\\centering",
+      render_figure_image(figure, default_height_cm, 1.0),
+      "\\par\\vspace{0.25ex}",
+      "{\\scriptsize\\itshape #{latex_escape(figure["caption"])}\\par}",
+      "\\end{minipage}"
+    ].join("\n")
+  end
+
+  [
+    "{\\hfuzz=30pt",
+    "\\begin{center}",
+    "\\makebox[\\linewidth][c]{%",
+    cells.join("\\hspace{#{gap_width}\\linewidth}\n"),
+    "}%",
+    "\\end{center}",
+    "}"
+  ].join("\n")
+end
+
+def render_class_grid(figures)
+  items = figure_items(figures)
+  return "" if items.empty?
+
+  columns = figures.fetch("columns", 4)
+  item_width = figures.fetch("item_width", 0.235)
+  gap_width = figures.fetch("gap_width", 0.015)
+  image_height = figures.fetch("image_height_cm", 7.0)
+  rows = items.each_slice(columns).to_a
+
+  lines = [
+    "\\begin{center}",
+    "{\\setlength{\\tabcolsep}{0pt}%"
+  ]
+
+  rows.each_with_index do |row, row_index|
+    lines << "\\makebox[\\linewidth][c]{%"
+    row.each_with_index do |figure, index|
+      path = figure["path"].to_s
+      image =
+        if !path.empty? && File.exist?(path)
+          "\\includegraphics[width=\\linewidth,height=#{image_height}cm,keepaspectratio]{#{latex_path(path)}}"
+        else
+          [
+            "\\fbox{%",
+            "\\begin{minipage}[c][#{image_height}cm][c]{\\linewidth}",
+            "\\centering\\footnotesize Missing image",
+            "\\end{minipage}%",
+            "}"
+          ].join("\n")
+        end
+
+      lines << "\\begin{minipage}[t]{#{item_width}\\linewidth}"
+      lines << "\\centering"
+      lines << image
+      lines << "\\par\\vspace{0.2ex}{\\scriptsize\\textbf{#{latex_escape(figure.fetch("label"))}}\\par}"
+      lines << "\\end{minipage}"
+      lines << "\\hspace{#{gap_width}\\linewidth}" unless index == row.length - 1
+    end
+    lines << "}%"
+    lines << "\\par\\vspace{0.55ex}" unless row_index == rows.length - 1
+  end
+
+  if figure_shared_caption(figures)
+    lines << "\\par\\vspace{0.35ex}"
+    lines << "{\\scriptsize\\itshape #{latex_escape(figure_shared_caption(figures))}\\par}"
+  end
+
+  lines += [
+    "}",
+    "\\end{center}"
+  ]
+  lines.join("\n")
+end
+
+def render_figures(figures)
+  items = figure_items(figures)
+  return "" if items.nil? || items.empty?
+
+  default_height = figure_default_height(figures)
+  if figure_layout(figures) == "side_by_side"
+    return render_side_by_side_figures(figures, default_height)
+  end
+  if figure_layout(figures) == "class_grid"
+    return render_class_grid(figures)
+  end
+
+  items.map do |figure|
+    path = figure["path"].to_s
+    render_single_figure(figure, default_height)
+  end.join("\n")
+end
+
+def render_class_table(classes)
+  return "" if classes.nil? || classes.empty?
+
+  rows = classes.map do |klass|
+    if klass.is_a?(Hash)
+      [klass.fetch("code"), klass.fetch("name")]
+    else
+      [klass, ""]
+    end
+  end
+
+  lines = [
+    "\\begin{center}",
+    "{\\footnotesize",
+    "\\renewcommand{\\arraystretch}{1.08}",
+    "\\begin{tabular}{@{}>{\\raggedright\\arraybackslash}p{0.24\\linewidth}>{\\raggedright\\arraybackslash}p{0.66\\linewidth}@{}}",
+    "\\toprule",
+    "\\textbf{Class} & \\textbf{Full name} \\\\",
+    "\\midrule"
+  ]
+  rows.each do |code, name|
+    lines << "#{latex_escape(code)} & #{latex_escape(name)} \\\\"
+  end
+  lines += [
+    "\\bottomrule",
+    "\\end{tabular}",
+    "}",
+    "\\end{center}"
+  ]
+  lines.join("\n")
 end
 
 def render_dataset(section)
   lines = []
   lines << "\\textbf{Dataset:} #{latex_escape(section["dataset_name"])}"
   lines << ""
-  lines << "\\textbf{Classes:} #{section.fetch("classes").map { |klass| latex_escape(klass) }.join(", ")}"
+  lines << "\\textbf{Classes:}"
+  lines << render_class_table(section.fetch("classes"))
   lines << ""
   lines << "\\textbf{Evaluation setup:} #{latex_escape(section["evaluation_setup"])}"
   lines << ""
@@ -176,6 +362,17 @@ def render_technical_details(details)
   ].join("\n")
 end
 
+def render_references(entries)
+  return "" if entries.nil? || entries.empty?
+
+  lines = ["\\vspace{0.35ex}{\\scriptsize\\textbf{References}\\par}", "{\\tiny"]
+  entries.each_with_index do |entry, index|
+    lines << "\\textbf{[#{index + 1}]} #{latex_escape(entry)}\\par"
+  end
+  lines << "}"
+  lines.join("\n")
+end
+
 def render_section(section)
   content = []
   content << render_body_text(section["body"]) if section["body"]
@@ -189,6 +386,7 @@ def render_section(section)
   content << render_technical_details(section["technical_details"]) if section["technical_details"]
   content << "\\textbf{Key result:} #{latex_escape(section["key_result"])}" if section["key_result"]
   content << render_itemize(section["bullets"]) if section["bullets"]
+  content << render_references(section["references"]) if section["references"]
   content << render_figures(section["figures"]) if section["figures"]
 
   [
