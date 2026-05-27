@@ -51,6 +51,7 @@ The community has also contributed a number of themes:
 - `snu` ([Seoul National University](https://snu.ac.kr))
 - `soton` ([University of Southampton](https://southampton.ac.uk/))
 - `stetson` ([Stetson University](https://stetson.edu))
+- `ucalgary` ([University of Calgary](https://www.ucalgary.ca/))
 - `umich` ([University of Michigan](https://umich.edu/))
 - `warwick` ([University of Warwick](https://warwick.ac.uk/))
 

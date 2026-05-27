@@ -1,0 +1,185 @@
+poster:
+  title: "CrohnIPI Diffusion: Class-Balanced Synthetic Augmentation for Crohn's Endoscopy Classification"
+  authors:
+    - name: "Sayan Nath"
+      affiliation_id: "ucalgary-cs"
+    - name: "Aditya Shekhar Nittala"
+      affiliation_id: "ucalgary-cs"
+  affiliations:
+    - id: "ucalgary-cs"
+      name: "Department of Computer Science, University of Calgary"
+      location: "Calgary, Canada"
+  event: "A-EMEDICO Annual Meeting 2026"
+  footer:
+    left: "Department of Computer Science, University of Calgary"
+    center: "A-EMEDICO Annual Meeting 2026"
+    right: "Contact: sayan.nath@ucalgary.ca"
+  layout:
+    columns:
+      - id: "left"
+        title: "Motivation, Dataset, Research Question"
+        sections:
+          - "motivation"
+          - "research-question"
+          - "dataset"
+      - id: "middle"
+        title: "Method and Experiment Design"
+        sections:
+          - "proposed-method"
+          - "synthetic-image-filtering"
+          - "experiment-design"
+          - "synthetic-dataset-design"
+      - id: "right"
+        title: "Results and Takeaways"
+        sections:
+          - "main-results"
+          - "per-class-recall-analysis"
+          - "failure-analysis"
+          - "main-takeaways"
+  logos:
+    height_cm: 6.2
+    left_height_cm: 7.2
+    left:
+      - "global-assets/ucalgary-logo.png"
+    right:
+      - "global-assets/difflab-logo.png"
+      - "global-assets/ilab-logo.png"
+
+sections:
+  - id: "motivation"
+    title: "Motivation"
+    body: |
+      Clinical endoscopy datasets are often highly imbalanced, where majority classes dominate the training data. This imbalance makes it difficult for classification models to learn rare Crohn's disease findings such as ulceration, edema, and stenosis.
+
+      Our work investigates whether diffusion-generated synthetic images can help improve classification performance under severe class imbalance.
+    figures:
+      - id: "dataset-fold-distribution"
+        path: ""
+        caption: "Figure 1. CrohnIPI dataset distribution across five folds. The normal class dominates the dataset, creating a strong class-imbalance problem."
+
+  - id: "research-question"
+    title: "Research Question"
+    key_question: "To what extent can per-class diffusion-generated synthetic images improve the classification performance of CrohnIPI models under severe class imbalance?"
+
+  - id: "dataset"
+    title: "Dataset"
+    dataset_name: "CrohnIPI endoscopy image dataset"
+    classes:
+      - "N"
+      - "E"
+      - "O"
+      - "AU"
+      - "S"
+      - "U3-10"
+      - "U>10"
+    evaluation_setup: "5-fold cross-validation"
+    main_challenge: "Severe class imbalance, where the majority class dominates and rare pathological classes have fewer examples."
+
+  - id: "proposed-method"
+    title: "Proposed Method"
+    body: |
+      We train per-class LoRA diffusion adapters using real CrohnIPI images. Each adapter generates synthetic images for a specific clinical class. The generated images are then passed through multiple filtering steps before being used to train a ConvNeXt-Large classifier.
+    figures:
+      - id: "synthetic-augmentation-pipeline"
+        path: ""
+        caption: "Figure 2. Overview of the proposed synthetic augmentation pipeline using per-class LoRA diffusion adapters and filtered synthetic data for classifier training."
+
+  - id: "synthetic-image-filtering"
+    title: "Synthetic Image Filtering"
+    body: |
+      To reduce low-quality or unsafe synthetic samples, we apply several filtering steps before using generated images for downstream classifier training.
+    table:
+      caption: "Table 1. Synthetic image filtering steps used to remove low-quality, inconsistent, memorized, or duplicate generated samples."
+      columns:
+        - "Filtering Step"
+        - "Purpose"
+      rows:
+        - ["Artifact detection", "Remove blurry or broken-color images"]
+        - ["Class-consistency check", "Remove images predicted as the wrong class"]
+        - ["DINOv2 memorization check", "Detect synthetic images that are too similar to real images"]
+        - ["Diversity deduplication", "Remove highly similar synthetic samples"]
+        - ["Final filtered set", "Used for downstream classifier training"]
+    technical_details:
+      display: "small"
+      items:
+        - "Laplacian variance < 50"
+        - "Channel std < 0.02"
+        - "ConvNeXt-Tiny confidence < 0.70"
+        - "Pairwise cosine similarity >= 0.95"
+
+  - id: "experiment-design"
+    title: "Experiment Design"
+    body: |
+      We compare real-only training against standard augmentation, oversampling, and multiple synthetic augmentation settings.
+    table:
+      caption: "Table 2. Training conditions used to evaluate whether synthetic diffusion augmentation improves CrohnIPI classification under severe class imbalance."
+      columns:
+        - "Condition"
+        - "Description"
+      rows:
+        - ["Real only", "Baseline using only real images"]
+        - ["Real + Augmented", "Standard clinical image augmentation"]
+        - ["Oversampling", "Repeated rare-class real images"]
+        - ["Synthetic uncapped", "Full per-class LoRA synthetic dataset"]
+        - ["Synthetic balanced/capped", "Equal synthetic cap per class"]
+        - ["Focal loss", "Synthetic data with focal loss"]
+        - ["Inverse-frequency CE", "Synthetic data with class-weighted loss"]
+
+  - id: "synthetic-dataset-design"
+    title: "Synthetic Dataset Design"
+    body: |
+      Synthetic images were generated for each class using per-class LoRA adapters. We evaluate both uncapped synthetic datasets and balanced/capped synthetic datasets to study whether synthetic class balancing improves classification performance.
+    figures:
+      - id: "synthetic-images-per-class"
+        path: ""
+        caption: "Figure 3. Number of generated synthetic images per class across different synthetic dataset variants."
+
+  - id: "main-results"
+    title: "Main Results"
+    table:
+      caption: "Table 3. Classification performance across real-only, augmentation, oversampling, and synthetic augmentation conditions. Focal Uncapped achieves the best Macro F1."
+      columns:
+        - "Method"
+        - "Macro F1"
+        - "Balanced Accuracy"
+        - "Macro AUROC"
+      rows:
+        - ["Real only", 0.7888, 0.7781, 0.9709]
+        - ["Real + Augmented", 0.7973, 0.7902, 0.9727]
+        - ["Oversampling", 0.7786, 0.7596, 0.9628]
+        - ["Synthetic", 0.8085, 0.7949, 0.9708]
+        - ["Synthetic + Balanced", 0.8076, 0.8090, 0.9591]
+        - ["Focal Uncapped", 0.8139, 0.8078, 0.9708]
+        - ["Focal Balanced", 0.8077, 0.7969, 0.9721]
+    key_result: "Synthetic augmentation improves Macro F1 over the real-only baseline. The best Macro F1 is achieved using the Focal Uncapped synthetic condition."
+
+  - id: "per-class-recall-analysis"
+    title: "Per-Class Recall Analysis"
+    body: |
+      Synthetic augmentation improves recall for several rare classes, but the gains are not uniform across all labels. This suggests that diffusion-based augmentation can help with class imbalance, but class-specific generation quality remains important.
+    figures:
+      - id: "rare-class-recall"
+        path: ""
+        caption: "Figure 4. Rare-class recall across training conditions. Synthetic augmentation improves some rare-class recalls, but not all classes benefit equally."
+
+  - id: "failure-analysis"
+    title: "Failure Analysis"
+    body: |
+      The current method still struggles with the E class. Failure analysis shows that some E samples are confused with other classes, including the majority class. This indicates that synthetic data alone is not enough; better class-specific generation and expert-guided filtering may be needed.
+    figures:
+      - id: "e-class-failure-analysis"
+        path: ""
+        caption: "Figure 5. Failure analysis showing that the E class remains difficult under the current synthetic augmentation method."
+
+  - id: "main-takeaways"
+    title: "Main Takeaways"
+    bullets:
+      - "Per-class LoRA diffusion can improve CrohnIPI classification under severe class imbalance."
+      - "Synthetic data performs better than simple oversampling."
+      - "The best Macro F1 is achieved using synthetic data with focal loss."
+      - "The E class remains challenging, showing the need for better class-specific generation and filtering."
+      - "Future work should include stronger quality control and expert validation of synthetic endoscopy images."
+
+references:
+  status: "to be provided"
+  entries: []
