@@ -113,7 +113,7 @@ sections:
     figures:
       - id: "synthetic-augmentation-pipeline"
         path: "content/assets/crohn-ipi-diffusion/fig3-proposed-solution.png"
-        width: 1.12
+        width: 1.00
         height_cm: 8.3
         top_padding_cm: 0.4
         caption: "Figure 3. Overview of the proposed synthetic augmentation pipeline using per-class LoRA diffusion adapters and filtered synthetic data for classifier training."
@@ -203,15 +203,15 @@ sections:
     figures:
       layout: "side_by_side"
       height_cm: 8.2
-      item_width: 0.535
-      gap_width: 0.012
+      item_width: 0.49
+      gap_width: 0.02
       items:
         - id: "rare-class-recall"
           path: "content/assets/crohn-ipi-diffusion/fig5a-rare_class_recall_progression.png"
-          caption: "Figure 5a. Rare-class recall across training conditions. Synthetic augmentation improves some rare-class recalls, but not all classes benefit equally."
+          caption: "Figure 5a. Rare-class recall across conditions; synthetic augmentation improves several rare classes."
         - id: "recall-advantage"
           path: "content/assets/crohn-ipi-diffusion/fig5b-recall_advantage_vs_real_only.png"
-          caption: "Figure 5b. Recall advantage compared with the real-only baseline."
+          caption: "Figure 5b. Recall advantage relative to the real-only baseline."
 
   - id: "failure-analysis"
     title: "Failure Analysis"
